@@ -138,88 +138,89 @@ class MainWindow(tk.Tk):
 
     def atualizar_dados(self, dados):
         global prev_velocidade, prev_combustivel, prev_temperatura, prev_marcha
-        
+
         if dados is None:  # Se os dados forem inválidos, não faz nada
             return
         
         velocidade, combustivel, temperatura, marcha = dados
-
-        # Calculando o tempo entre as medidas
-        current_time = time.time()  # Tempo atual
-        delta_time = current_time - self.prev_time  # Diferença de tempo entre as leituras
+        current_time = time.time()
+        delta_time = current_time - self.prev_time
 
         # Inicializa o combustível inicial na primeira leitura
         if self.combustivel_inicial is None:
-            self.combustivel_inicial = combustivel  # Armazena o valor inicial do combustível
+            self.combustivel_inicial = combustivel
 
-        # Envia o valor anterior antes dele set atualizado
+        # Calcula aceleração e distância
         prev_velocidade = prev_velocidade if prev_velocidade is not None else 0
-
-        self.aceleracao = cal_aceleracao(float(prev_velocidade), float(velocidade), delta_time)
-
+        self.aceleracao = cal_aceleracao(prev_velocidade, float(velocidade), delta_time)
         nova_distancia = cal_distancia_total(prev_velocidade, float(velocidade), delta_time)
-        distancia_anterior = self.distancia_total
-        self.distancia_total += nova_distancia  # Só atualiza se nova_distancia > 0
+        self.distancia_anterior = self.distancia_total
+        self.distancia_total += nova_distancia
 
         if combustivel != prev_combustivel:
+
             self.consumo = cal_consumo(self.distancia_total, self.combustivel_inicial, combustivel)
 
-        if velocidade > 0:
-            self.contador_i += 1
-            self.vetor_v += velocidade
-            self.vmed = cal_vmed(self.vetor_v, self.contador_i)
-            #print(f"contador: {self.contador_i}")
-            #print(f"velocidade: {velocidade}")
-            #print(f"calculo: {self.vmed}")
+        # Calcula médias de velocidade e temperatura
+        self.contador_i += 1
+        self.vetor_v += velocidade
+        self.vmed = cal_vmed(self.vetor_v, self.contador_i)
 
-        if temperatura > 0:
-            self.contador_j += 1
-            self.vetor_t += temperatura
-            self.tmed = cal_tmed(self.vetor_t, self.contador_j)
-            #print("-")
-            #print("temperatura")
-            #print(f"contador: {self.contador_j}")
-            #print(f"velocidade: {temperatura}")
-            #print(f"calculo: {self.tmed}")
+        self.contador_j += 1
+        self.vetor_t += temperatura
+        self.tmed = cal_tmed(self.vetor_t, self.contador_j)
 
-        self.prev_time = current_time  # Atualiza prev_time para a próxima leitura
+        self.prev_time = current_time
 
-        # Comparando os valores com os anteriores e chamando as funções de atualização se necessário
-        if velocidade != prev_velocidade:
-            self.update_velocidade(velocidade)
-            prev_velocidade = velocidade
-
-        self.atualizar_grafico(velocidade)
-
-        if self.distancia_total != distancia_anterior:
-            self.atualizar_valor_tabela("Distancia total", f"{self.distancia_total} metros")
-            distancia_anterior = self.distancia_total
-
-        self.atualizar_valor_tabela("Aceleração", f"{self.aceleracao} m/s²")
-        self.atualizar_valor_tabela("Velocidade Média", f"{self.vmed} Km/h")
-        
-        if combustivel != prev_combustivel:
-            self.update_combustivel(combustivel)
+        # Funções de atualização usando threads
+        def atualizar_dados_valores():
+            # Atualiza apenas se houver diferença significativa
+            if self.distancia_total != self.distancia_anterior:
+                self.atualizar_valor_tabela("Distancia total", f"{self.distancia_total} metros")
+                self.distancia_anterior = self.distancia_total
+            self.atualizar_valor_tabela("Aceleração", f"{self.aceleracao} m/s²")
+            self.atualizar_valor_tabela("Velocidade Média", f"{self.vmed} Km/h")
             self.atualizar_valor_tabela("Consumo", f"{self.consumo} Km/L")
-            prev_combustivel = combustivel
-        
-        if temperatura != prev_temperatura:
-            self.update_temperature(temperatura)
-            prev_temperatura = temperatura
+            self.atualizar_valor_tabela("Temperatura Média", f"{self.tmed} °C")
 
-        self.atualizar_valor_tabela("Temperatura Média", f"{self.tmed} °C")
-        
-        if marcha != prev_marcha:
-            self.update_marcha(marcha)
-            prev_marcha = marcha
+        def atualizar_dados_velocidade():
+            global prev_velocidade
+            if velocidade != prev_velocidade:
+                self.update_velocidade(velocidade)
+                prev_velocidade = velocidade
+            self.atualizar_grafico(velocidade)
+
+        def atualizar_dados_combustivel():
+            global prev_combustivel
+            if combustivel != prev_combustivel:
+                self.update_combustivel(combustivel)
+                prev_combustivel = combustivel
+
+        def atualizar_dados_temperatura():
+            global prev_temperatura
+            if temperatura != prev_temperatura:
+                self.update_temperature(temperatura)
+                prev_temperatura = temperatura
+
+        def atualizar_dados_marcha():
+            global prev_marcha
+            if marcha != prev_marcha:
+                self.update_marcha(marcha)
+                prev_marcha = marcha
+
+        atualizar_dados_valores()
+        atualizar_dados_velocidade()
+        atualizar_dados_combustivel()
+        atualizar_dados_temperatura()
+        atualizar_dados_marcha()
 
     ###################################################################################################
 
     def setup_ui(self):
         ################################################################################################### <----------------------------- Remover na versão final
 
-        button = tk.Button(self, text="Abrir Janela para testes", command=self.controladores)
-        button.grid(row=1, column=2)
+        #button = tk.Button(self, text="Abrir Janela para testes", command=self.controladores)
+        #button.grid(row=1, column=2)
 
         ###################################################################################################
 

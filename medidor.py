@@ -115,12 +115,18 @@ def plot_image_marcha(marcha):
     if marcha == 0:
         ajuste = "N"
         cor = "red"
+    else:
+        ajuste = "N"
+        cor = "verde"
+
+    """
     elif marcha == -1:
         ajuste = "R"
         cor = "yellow"
     else:
         ajuste = str(marcha)
         cor = "green"
+    """
 
     marcha = ajuste
 
