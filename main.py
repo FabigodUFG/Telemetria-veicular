@@ -301,7 +301,7 @@ class MainWindow(tk.Tk):
         if portas:
             self.combobox.set("Selecione uma porta")
         else:
-            self.combobox.set("Nenhuma porta disponível")
+            self.combobox.set("Selecione uma porta")
 
     def porta_selecionada(self, event):
         print("Porta selecionada:", self.combobox.get()) # <-------------------------------- pode remover depois, só printa pra falar q realmente selecionou
