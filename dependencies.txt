@@ -1,0 +1,5 @@
+imagetk
+plotly
+pillow
+kaleido
+matplotlib
