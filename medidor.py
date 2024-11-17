@@ -117,7 +117,7 @@ def plot_image_marcha(marcha):
         cor = "red"
     else:
         ajuste = "N"
-        cor = "verde"
+        cor = "green"
 
     """
     elif marcha == -1:
