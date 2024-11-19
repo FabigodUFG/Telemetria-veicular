@@ -77,6 +77,8 @@ class MainWindow(tk.Tk):
         self.setup_ui()
         self.create_graph()  # Criar o gráfico na interface
         self.update_graph()  # Desenha os instrumentos na tela quando inicia
+        self.leitura_thread = None
+        self.leitura_ativa = threading.Event()
         self.protocol("WM_DELETE_WINDOW", self.fechar_janela) # Função para fechar o programa sem erros
 
     ###################################################################################################
@@ -95,14 +97,16 @@ class MainWindow(tk.Tk):
                     self.botao_conectar.config(text="Desconectar", bg="red")
                     self.conectado = True
                     
-                    # Inicia a leitura dos dados em uma nova thread
-                    self.thread_leitura = threading.Thread(target=self.ler_dados_xbee, daemon=True)
-                    self.thread_leitura.start()
+                    # Inicia ou reutiliza a thread de leitura
+                    self.leitura_ativa.set()  # Permite que a thread execute
+                    if self.leitura_thread is None or not self.leitura_thread.is_alive():
+                        self.leitura_thread = threading.Thread(target=self.ler_dados_xbee, daemon=True)
+                        self.leitura_thread.start()
 
                 except Exception as e:
                     print(f"Erro ao conectar: {e}")
                     messagebox.showerror("Erro", f"Falha na conexão: {e}")
-                    self.desconectar()  # Garante que desconecta no caso de erro
+                    self.desconectar()
             else:
                 messagebox.showwarning("Aviso", "Por favor, selecione uma porta para conectar.")
         else:
@@ -112,13 +116,14 @@ class MainWindow(tk.Tk):
 
     def ler_dados_xbee(self):
         try:
-            while self.conectado:
+            while self.leitura_ativa.is_set():
                 msg = self.dispositivo.read_data()
                 if msg:
                     dados_recebidos = msg.data.decode('utf-8').strip()
                     print(f"Dado recebido: {dados_recebidos}")
                     dados_separados = processar_dados(dados_recebidos)
                     self.atualizar_dados(dados_separados)
+                time.sleep(0.1)  # Evita uso excessivo de CPU
 
         except Exception as e:
             print(f"Erro na leitura do XBee: {e}")
@@ -128,6 +133,9 @@ class MainWindow(tk.Tk):
     def desconectar(self):
         if self.conectado:
             self.conectado = False
+            self.leitura_ativa.clear()  # Sinaliza para a thread encerrar
+            if self.leitura_thread is not None:
+                self.leitura_thread.join()  # Aguarda o término da thread
             try:
                 self.dispositivo.close()
                 print("Conexão com o XBee encerrada.")
@@ -358,7 +366,7 @@ class MainWindow(tk.Tk):
 
             # Continua atualização com intervalo maior, se o tempo não tiver passado de 60 segundos
             if time.time() - self.tempo_inicial < 60:
-                self.after_id = self.after(100, self.atualizar_grafico)  # Intervalo de 100 ms
+                self.after_id = self.after(500, self.atualizar_grafico)  # Intervalo de 100 ms
             else:
                 self.reset_grafico()
 
