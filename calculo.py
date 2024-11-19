@@ -1,26 +1,23 @@
-def cal_aceleracao(prev_velocidade, velocidade, tempo):
-    #print(f"pre_velocidade: {prev_velocidade}")
-    #print(f"velocidade: {vel}")
+def cal_aceleracao(prev_velocidade, velocidade, delta_tempo):
 
-    aceleracao = (velocidade - prev_velocidade) / tempo 
-    #print(f"Aceleração: {aceleracao} m/s²")
+    aceleracao = (velocidade - prev_velocidade) / delta_tempo 
     return aceleracao
 
-def cal_distancia_total(prev_velocidade, velocidade_atual, delta_time, tolerancia=0.1):
+def cal_distancia_total(prev_velocidade, velocidade_atual, delta_tempo, tolerancia=0.1):
     # Ignora o cálculo se a velocidade média estiver próxima de zero
     velocidade_media = (prev_velocidade + velocidade_atual) / 2
     if abs(velocidade_media) < tolerancia:
         return 0  # Não adiciona distância
     
     # Calcula a distância percorrida nesse intervalo
-    distancia = velocidade_media * delta_time
+    distancia = velocidade_media * delta_tempo
     return distancia
 
-def cal_consumo(distancia_total, combustivel_inicial, combustivel):    
+def cal_consumo(distancia_total, combustivel_inicial, combustivel_atual):    
     # Cálculo do combustível consumido até agora
-    consumo_total = combustivel_inicial - combustivel
+    consumo_total = combustivel_inicial - combustivel_atual
 
-    # Consumo em km/L (apenas calcula se já percorreu alguma distância)
+    # Consumo em km/L (apenas calcula se já teve algum gasto)
     if consumo_total > 0:
         consumo = (distancia_total / 1000) / (consumo_total / 1000)  # Distância em km / Litros consumidos
     else:
