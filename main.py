@@ -1,7 +1,6 @@
 import tkinter as tk
 from tkinter import ttk
 from tkinter import messagebox
-from tkinter import TclError
 
 from PIL import Image, ImageTk
 import matplotlib.pyplot as plt
@@ -15,15 +14,16 @@ import threading
 
 from digi.xbee.devices import XBeeDevice
 
-from calculo import *
+from calculo import *           # Importa as finções do arquivo calculo.py
 from medidor import *           # Importa as funções do arquivo medidor.py
 from processamento import *     # Importa as funções do arquivo processamento.py
+from telemetria_view import *   # Importa as funções do arquivo telemetria_view.py
 
 class MainWindow(tk.Tk):
     def __init__(self):
         super().__init__()
         self.title("Telemetria")
-        self.geometry("1550x820")  # Definindo a altura inicial
+        self.geometry("1550x820")  # Definindo o tamanho da janela principal
 
         # Frame para o cabeçalho (5 colunas)
         self.header_frame = tk.Frame(self)
@@ -74,12 +74,14 @@ class MainWindow(tk.Tk):
         # Controle das threads
         self.thread_grafico = False
 
-        self.setup_ui()
-        self.create_graph()  # Criar o gráfico na interface
-        self.update_graph()  # Desenha os instrumentos na tela quando inicia
+        self.setup_ui()         # Inicia a interface
+        self.create_graph()     # Criar o gráfico na interface
+        self.update_graph()     # Desenha os instrumentos na tela quando inicia
+
         self.leitura_thread = None
         self.leitura_ativa = threading.Event()
         self.protocol("WM_DELETE_WINDOW", self.fechar_janela) # Função para fechar o programa sem erros
+        self.tabela_telemetria = TabelaTelemetria(self.master)
 
     ###################################################################################################
 
@@ -165,8 +167,7 @@ class MainWindow(tk.Tk):
         self.distancia_anterior = self.distancia_total
         self.distancia_total += nova_distancia
 
-        if combustivel != prev_combustivel:
-
+        if combustivel != prev_combustivel or self.distancia_total > self.distancia_anterior:
             self.consumo = cal_consumo(self.distancia_total, self.combustivel_inicial, combustivel)
 
         # Calcula médias de velocidade e temperatura
@@ -232,7 +233,7 @@ class MainWindow(tk.Tk):
 
         ###################################################################################################
 
-        button = tk.Button(self, text="Telemetria", command=self.telemetria)
+        button = tk.Button(self, text="Telemetria", command=self.abrir_tabela_telemetria)
         button.grid(row=0, column=1)
 
         ###################################################################################################
@@ -435,8 +436,6 @@ class MainWindow(tk.Tk):
         label_mar = tk.Label(slider_window, text="Marcha")
         label_mar.grid(row=2, column=7, pady=5)
 
-        ############################
-
     ###################################################################################################
 
     def update_graph(self):
@@ -500,14 +499,30 @@ class MainWindow(tk.Tk):
 
     ###################################################################################################
         
-    def telemetria(self):
+    def abrir_tabela_telemetria(self):
+        self.tabela_telemetria.criar_tabela(
+            self.velocidade,
+            self.vmed,
+            self.distancia_total,
+            self.aceleracao,
+            self.consumo,
+            self.temperatura,
+            self.tmed
+        )
+    
+    def atualizar_valor_tabela(self, variavel, valor):
+        self.tabela_telemetria.atualizar_valor(variavel, valor)
+
+    # Por via das duvidas vou deixar aqui só por um tempo até verificar se não tá tendo nehum problema
+
+        """
         # Configura a janela da tabela
-        self.tabela_window = tk.Toplevel(self.master)
-        self.tabela_window.title("Tabela de Valores")
-        self.tabela_window.geometry("500x400")
+        tabela_window = tk.Toplevel(self.master)
+        tabela_window.title("Tabela da telemetria")
+        tabela_window.geometry("500x400")
 
         # Tabela (Treeview)
-        self.tabela = ttk.Treeview(self.tabela_window, columns=("Variável", "Valor"), show="headings")
+        self.tabela = ttk.Treeview(tabela_window, columns=("Variável", "Valor"), show="headings")
         self.tabela.heading("Variável", text="Variável")
         self.tabela.heading("Valor", text="Valor")
         self.tabela.pack(pady=20, fill="both", expand=True)
@@ -541,9 +556,10 @@ class MainWindow(tk.Tk):
                 except TclError:
                     #print("Erro: A tabela está fechada ou inacessível.")
                     return
+        """
 
-            # As linhas de baixo estão comentadas pois gastam ciclos de processamento, remova o '#' somente para realizar testes!
-            """
+            # As linhas de baixo estão comentadas pois gastam ciclos de processamento, remova o comentário somente para realizar testes!
+        """
             else:
                 print(f"A tabela está fechada; atualização de '{variavel}' não realizada.")
         else:
